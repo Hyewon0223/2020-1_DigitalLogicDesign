@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <string>
+#include <iomanip> //
 #include <vector>
 #include <limits.h>
 using namespace std;
@@ -11,7 +12,7 @@ using namespace std;
 string Binary(int a,int b){
     char bin[a];
     string binary = "";
-    for (int i=0;i<a;i++) bin[i] = 0;
+    for (int i=0;i<a;i++) bin[i] = '0';
     int idx=0;
     while (b>=1){
         bin[idx++] = '0'+ b%2;
@@ -21,12 +22,30 @@ string Binary(int a,int b){
     return binary;
 }
 
-int Count(string n){
+string Count(string n){
     int cnt = 0;
     for (int i=0;i<n.length();i++){
         if (n[i] == '1') cnt++;
     }
-    return cnt;
+    return to_string(cnt);
+}
+
+void showPI(int a, int b, string arr[][4]){
+    cout << showbase;
+
+    cout << setw(10) << "# of 1s";
+    cout << setw(10) << "minterm";
+    cout << setw(10) << "binary"<<'\n';
+    
+    for (int j=0;j<=a;j++){
+        for (int i=0;i<b;i++){
+            if (arr[i][0] == to_string(j)){
+                cout << setw(10) << arr[i][0]; 
+                cout << setw(10) << arr[i][2]; 
+                cout << setw(10) << arr[i][3] << '\n'; 
+            }
+        }
+    }
 }
 
 int main(){
@@ -40,8 +59,9 @@ int main(){
     int dontcare[ndc];  
 
     cout << "Minterm: ";
-    for (int i=0;i<nmin;i++) cin >> minterm[i];
-
+    for (int i=0;i<nmin;i++){
+        cin >> minterm[i];
+    }
     cout  << "Don't Care: ";
     for (int i=0;i<ndc;i++) cin >> dontcare[i];
 
@@ -55,8 +75,18 @@ int main(){
         numOfOne = Count(binary);
         PIArr[i][0] = numOfOne;
         PIArr[i][1] = "m";
-        PIArr[i][2] = minterm[i];
+        PIArr[i][2] = to_string(minterm[i]);
+        PIArr[i][3] = binary;
+        //cout << PIArr[i][0] << " " << PIArr[i][1] << " " << PIArr[i][2] << " " << PIArr[i][3] << '\n';
+    }
+    for (int i=nmin;i<nmin+ndc;i++){
+        binary = Binary(InputVariable,dontcare[i-nmin]);
+        numOfOne = Count(binary);
+        PIArr[i][0] = numOfOne;
+        PIArr[i][1] = "d";
+        PIArr[i][2] = to_string(dontcare[i-nmin]);
         PIArr[i][3] = binary;
     }
+    showPI(InputVariable, nmin+ndc, PIArr);
     return 0;
 }
