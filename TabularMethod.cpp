@@ -9,8 +9,12 @@
 #include <limits.h>
 using namespace std;
 
-
-vector<string> EPI;
+vector<vector<string>> vecEPI;
+vector<string> vecEPI1;
+vector<string> vecEPI2;
+vector<vector<string>> vecNEPI;
+vector<string> vecNEPI1;
+vector<string> vecNEPI2;
 
 string Binary(int a,int b){
     char bin[a];
@@ -36,7 +40,7 @@ string Count(string n){
 void showPI(int a, int b, string arr[][4]){
     cout << setw(7) << "# of 1s";
     cout << setw(15) << "minterm";
-    cout << setw(15) << "binary"<<'\n';
+    cout << setw(15) << "binary" << '\n';
     
     for (int j=0;j<=a;j++){
         for (int i=0;i<b;i++){
@@ -50,8 +54,27 @@ void showPI(int a, int b, string arr[][4]){
     cout << "-----------------------------------------"<< '\n';
 }
 
-//a=nmin+ndc, b=inputvariable
-void HammingDistance(int a,int b,string arr[][4]){
+void EPINEPI(int idx, int a, string arr[][4], string EPI[][4]){
+    for (int i=0;i<idx;i++){
+        if (arr[i][3] == "V") {
+            vecEPI1.push_back(EPI[i][1]);
+            vecEPI2.push_back(EPI[i][2]);
+        }
+    }
+    for (int i=0;i<a;i++){
+        if (arr[i][3] == "") {
+            vecNEPI1.push_back(arr[i][1]);
+            vecNEPI2.push_back(arr[i][2]);
+        }
+    }
+    vecEPI.push_back(vecEPI1);
+    vecEPI.push_back(vecEPI2);
+    vecNEPI.push_back(vecNEPI1);
+    vecNEPI.push_back(vecNEPI2);
+}
+
+//a=nmin+ndc(=arr의 길이), b=inputvariable
+void HammingDistance(int a,int b,string arr[100][4]){
     string numOfOne;
     vector<int> diff;
     string EPI[100][4];
@@ -77,7 +100,11 @@ void HammingDistance(int a,int b,string arr[][4]){
                     }
                     bool state = true;
                     for (int k=0;k<idx;k++){
-                        if (EPI[k][2] == binary) state = false;;
+                        if (EPI[k][2] == binary){
+                            state = false;
+                            arr[i][3] = "V";
+                            arr[j][3] = "V";
+                        }
                     }
                     if (state){
                         numOfOne = Count(binary);
@@ -94,12 +121,138 @@ void HammingDistance(int a,int b,string arr[][4]){
     }
     if (idx != 0) showPI(b,idx,EPI);
     int vcnt = 0;
-    for (int i=0;i<idx;i++){
-        if (arr[i][3] == "V") vcnt++; 
+    for (int i=0;i<a;i++){
+        if (arr[i][3] == "V") vcnt++;
     }
     if (vcnt != 0 && idx>1) HammingDistance(idx,b,EPI);
-    
+    else EPINEPI(idx,a, arr, EPI);
 }
+
+//arr = table, len=nmin, arr2=minterm
+void showDominance(int row, int col, string arr1[][1],int len, int arr2[]){
+    cout << setw(20) << "Prime Implicants";
+    for (int i=0;i<len;i++) cout << setw(4) << arr2[i];
+    cout << '\n';
+    
+    for (int i=0;i<row;i++){
+        cout << setw(20) << arr1[i][0]; 
+        for (int j=1;j<col;j++){
+            cout << setw(4) << arr1[i][j]; 
+        }
+        cout << '\n';
+    }
+    cout << "-----------------------------------------" << '\n';
+}
+
+//a = nmin, arr[] = minterm;
+string Dominance(int a, int arr[]){
+    string solution = "";
+    //vecNEPI[0] = [8,10 10,11  11,15  12,13  13,15]
+    //vecNEPI[1] = [10-0  101-   1-11   110-   11-1]
+    int row = vecNEPI[0].size()+vecEPI[0].size();
+    string table[row][a+1];
+    for (int i=0;i<row;i++){
+        for (int j=0; j<a+1; j++) table[i][j] = " ";
+    }
+    for (int i=0;i<vecNEPI[0].size();i++){
+        table[i][0] = vecNEPI[1][i];
+        istringstream aa(vecNEPI[0][i]);
+        string stringBuffer;
+        int k = 0;
+        string num[100];
+        while(getline(aa,stringBuffer,',')){
+            num[k++] = stringBuffer;
+        }
+        // for (int m=0;m<k;m++){
+        //     cout << num[m] << " ";
+        // }
+        // cout << '\n';
+        for (int l=0;l<k;l++){
+            for (int j=0; j<a; j++){
+                if (num[l] == to_string(arr[j])) table[i][j+1] = "V";
+            }
+        }
+    }
+    for (int i=vecNEPI[0].size();i<row;i++){
+        table[i][0] = vecEPI[1][i-vecNEPI[0].size()];
+        istringstream aa(vecEPI[0][i-vecNEPI[0].size()]);
+        string stringBuffer;
+        int k = 0;
+        string num[100];
+        while(getline(aa,stringBuffer,',')){
+            num[k++] = stringBuffer;
+        }
+        for (int l=0;l<k;l++){
+            for (int j=0; j<a; j++){
+                if (num[l] == to_string(arr[j])) table[i][j+1] = "V";
+            }
+        }
+    }
+    // for (int i=0;i<row;i++){
+    //     for (int j=0;j<a+1;j++){
+    //         cout << table[i][j] << " ";
+    //     }
+    //     cout << '\n';
+    // }
+    //showDominance(row,a+1,table,a,arr); //함수로 구현하고 싶은데 인자로 받는 과정에서 에러 발생
+    cout << setw(10) << "PI";
+    for (int i=0;i<a;i++) cout << setw(4) << arr[i];
+    cout << '\n';
+    
+    for (int i=0;i<row;i++){
+        cout << setw(10) << table[i][0]; 
+        for (int j=1;j<a+1;j++){
+            cout << setw(4) << table[i][j]; 
+        }
+        cout << '\n';
+    }
+    cout << "-----------------------------------------" << '\n';
+
+    //column dominance
+    for (int j=1;j<a+1;j++){
+        int cnt = 0; //V의 수를 세어줌
+        int idx = 0; //유일한 V가 있는 위치 저장
+        for (int i=0;i<row;i++){
+            if (table[i][j] == "V" || table[i][j] == "O"){
+                cnt++;
+                idx = i;
+            }
+        }
+        if (cnt == 1 && table[idx][j]=="V"){
+            table[idx][j] = "O";
+            solution += table[idx][0]+"+";
+            for (int k=1;k<a+1;k++){
+                if (table[idx][k] == "V") {
+                    table[idx][k] = "O";
+                    for (int l=0;l<row;l++){
+                        if (table[l][k] == "V") table[l][k] = "O";
+                    }
+                }
+            }
+        }
+    }
+    cout << "   >> Column Dominance" <<'\n';
+    cout << setw(10) << "PI";
+    for (int i=0;i<a;i++) cout << setw(4) << arr[i];
+    cout << '\n';
+        
+    for (int i=0;i<row;i++){
+        cout << setw(10) << table[i][0]; 
+        for (int j=1;j<a+1;j++) cout << setw(4) << table[i][j]; 
+        cout << '\n';
+    }
+    for (int i=0;i<a+1;i++) cout << "-----";
+    cout << '\n';
+
+    //row dominance
+    // for (int i=0;i<row;i++){
+    //     for (int j=1;j<a+1;j++){
+            
+    //     }
+    // }
+    return solution;
+}
+
 
 int main(){
     int InputVariable,nmin,ndc;
@@ -111,11 +264,11 @@ int main(){
     int minterm[nmin];
     int dontcare[ndc];  
 
-    cout << "Minterm: ";
+    cout << "Minterm: " << '\n';
     for (int i=0;i<nmin;i++){
         cin >> minterm[i];
     }
-    cout  << "Don't Care: ";
+    cout  << "Don't Care: " << '\n';
     for (int i=0;i<ndc;i++) cin >> dontcare[i];
 
     sort(minterm,minterm+nmin);
@@ -144,6 +297,22 @@ int main(){
     }
     showPI(InputVariable, nmin+ndc, PIArr);
     HammingDistance(nmin+ndc,InputVariable,PIArr);
+
+    cout << "EPI" << '\n';
+    for (int i=0;i<vecEPI.size();i++){
+        for (int j=0;j<vecEPI[i].size();j++){
+            cout << vecEPI[i][j] << " ";
+        }
+        cout << '\n';
+    }
+    cout << "NEPI"<<'\n';
+    for (int i=0;i<vecNEPI.size();i++){
+        for (int j=0;j<vecNEPI[i].size();j++){
+            cout << vecNEPI[i][j] << " ";
+        }
+        cout << '\n';
+    }
+    cout << Dominance(nmin,minterm); //column/row dominance table
 
     return 0;
 }
