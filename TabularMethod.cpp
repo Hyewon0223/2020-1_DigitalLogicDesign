@@ -5,7 +5,7 @@
 #include <cstdlib>
 #include <string>
 #include <iomanip> //
-#include <vector>
+#include <vector> //
 #include <limits.h>
 using namespace std;
 
@@ -206,7 +206,8 @@ string Dominance(int a, int arr[]){
         }
         cout << '\n';
     }
-    cout << "-----------------------------------------" << '\n';
+    for (int i=0;i<a+1;i++) cout << "-----";
+    cout << '\n';  
 
     //column dominance
     for (int j=1;j<a+1;j++){
@@ -231,7 +232,7 @@ string Dominance(int a, int arr[]){
             }
         }
     }
-    cout << "   >> Column Dominance" <<'\n';
+    cout << "   >> Complete Column Dominance" <<'\n';
     cout << setw(10) << "PI";
     for (int i=0;i<a;i++) cout << setw(4) << arr[i];
     cout << '\n';
@@ -244,15 +245,134 @@ string Dominance(int a, int arr[]){
     for (int i=0;i<a+1;i++) cout << "-----";
     cout << '\n';
 
-    //row dominance
-    // for (int i=0;i<row;i++){
-    //     for (int j=1;j<a+1;j++){
-            
-    //     }
-    // }
+    // row dominance
+    while (true){
+        int include[row][row];
+        int includeSum[row];
+        for (int i=0;i<row;i++){
+            includeSum[i] = 0;
+            for (int j=0;j<row;j++) include[i][j] = 0;
+        }
+        bool state = false;
+        for (int i=0;i<row;i++){
+            for (int j=0;j<row;j++){
+                if (i!=j){
+                    for (int k=1;k<a+1;k++){
+                        if (table[i][k] == "V" && table[i][k] == table[j][k]) state = true;
+                        else if (table[i][k] == "V" && table[i][k] != table[j][k]) {
+                            state = false;
+                            break;
+                        }
+                    }
+                    if (state) include[j][i] = 1;
+                    state = false;
+                }
+            }
+        }
+        int max = INT_MIN;
+        int max_idx;
+        int totalSum = 0;
+        for (int i=0;i<row;i++){
+            for (int j=0;j<row;j++){
+                includeSum[i] += include[i][j];
+            }
+            if (max < includeSum[i]){
+                max = includeSum[i];
+                max_idx = i;
+            }
+            totalSum += includeSum[i];
+        }
+        if (totalSum == 0) break;
+        solution += table[max_idx][0] + "+";
+        for (int i=1;i<a+1;i++){
+            if (table[max_idx][i] == "V"){
+                for (int j=0;j<row;j++){
+                    if (table[j][i] == "V") table[j][i] = "O";
+                }
+            }
+        }
+    }
+
+    cout << "   >> Complete Row Dominance" <<'\n';
+    cout << setw(10) << "PI";
+    for (int i=0;i<a;i++) cout << setw(4) << arr[i];
+    cout << '\n';
+        
+    for (int i=0;i<row;i++){
+        cout << setw(10) << table[i][0]; 
+        for (int j=1;j<a+1;j++) cout << setw(4) << table[i][j]; 
+        cout << '\n';
+    }
+    for (int i=0;i<a+1;i++) cout << "-----";
+    cout << '\n';     
+
+    //row dominance가 없는 경우
+    while (true){
+        int rowSum[row];
+        int rowTotal = 0;
+        int max2_idx = 0;
+        int max2 = INT_MIN;
+        for (int i=0;i<row;i++) rowSum[i] = 0;
+        for (int i=0;i<row;i++){
+            for (int j=1;j<a+1;j++){
+                if (table[i][j] == "V") rowSum[i]++;
+            }
+            rowTotal += rowSum[i];
+            if (max2 < rowSum[i]){
+                max2 = rowSum[i];
+                max2_idx = i;
+            }
+        }
+        if (rowTotal == 0) return solution;
+        for (int i=1;i<a+1;i++){
+            if (table[max2_idx][i] == "V"){
+                for (int j=0;j<row;j++){
+                    if (table[j][i] == "V") table[j][i] = "O";
+                }
+            }
+        }
+        solution += table[max2_idx][0] + "+";
+    }
+
+    cout << "   >> Petrick's Method Complete" <<'\n';
+    cout << setw(10) << "PI";
+    for (int i=0;i<a;i++) cout << setw(4) << arr[i];
+    cout << '\n';
+        
+    for (int i=0;i<row;i++){
+        cout << setw(10) << table[i][0]; 
+        for (int j=1;j<a+1;j++) cout << setw(4) << table[i][j]; 
+        cout << '\n';
+    }
+    for (int i=0;i<a+1;i++) cout << "-----";
+    cout << '\n'; 
+
     return solution;
 }
 
+// a = InputVariable
+string showSolution(int a, string str){
+    string FinalSolution = "f(";
+    for (int i=0;i<a-1;i++) FinalSolution += "X"+to_string(i)+",";
+    FinalSolution += "X"+to_string(a-1)+") = ";
+    istringstream aa(str);
+    string stringBuffer;
+    int idx = 0;
+    string PI_binary[100];
+    while(getline(aa,stringBuffer,'+')){
+        PI_binary[idx++] = stringBuffer;
+    }
+    for (int i=0;i<idx;i++){
+        for (int j=0;j<PI_binary[i].length();j++){
+            if (PI_binary[i][j] != '-') {
+                FinalSolution += "X" + to_string(j);
+                if (PI_binary[i][j] == '0') FinalSolution +=  "'";
+            }
+        }
+        if (i != idx-1) FinalSolution += " + ";
+    }
+    return FinalSolution;
+}
 
 int main(){
     int InputVariable,nmin,ndc;
@@ -264,12 +384,15 @@ int main(){
     int minterm[nmin];
     int dontcare[ndc];  
 
-    cout << "Minterm: " << '\n';
-    for (int i=0;i<nmin;i++){
-        cin >> minterm[i];
+    if (nmin > 0){
+        cout << "Minterm: ";
+        for (int i=0;i<nmin;i++)cin >> minterm[i];
     }
-    cout  << "Don't Care: " << '\n';
-    for (int i=0;i<ndc;i++) cin >> dontcare[i];
+
+    if (ndc > 0){
+        cout  << "Don't Care: ";
+        for (int i=0;i<ndc;i++) cin >> dontcare[i];
+    }
 
     sort(minterm,minterm+nmin);
     sort(dontcare,dontcare+ndc);
@@ -298,21 +421,21 @@ int main(){
     showPI(InputVariable, nmin+ndc, PIArr);
     HammingDistance(nmin+ndc,InputVariable,PIArr);
 
-    cout << "EPI" << '\n';
-    for (int i=0;i<vecEPI.size();i++){
-        for (int j=0;j<vecEPI[i].size();j++){
-            cout << vecEPI[i][j] << " ";
-        }
-        cout << '\n';
-    }
-    cout << "NEPI"<<'\n';
-    for (int i=0;i<vecNEPI.size();i++){
-        for (int j=0;j<vecNEPI[i].size();j++){
-            cout << vecNEPI[i][j] << " ";
-        }
-        cout << '\n';
-    }
-    cout << Dominance(nmin,minterm); //column/row dominance table
-
+    // cout << "EPI" << '\n';
+    // for (int i=0;i<vecEPI.size();i++){
+    //     for (int j=0;j<vecEPI[i].size();j++){
+    //         cout << vecEPI[i][j] << " ";
+    //     }
+    //     cout << '\n';
+    // }
+    // cout << "NEPI"<<'\n';
+    // for (int i=0;i<vecNEPI.size();i++){
+    //     for (int j=0;j<vecNEPI[i].size();j++){
+    //         cout << vecNEPI[i][j] << " ";
+    //     }
+    //     cout << '\n';
+    // }
+    string solution = Dominance(nmin,minterm); //column/row dominance table
+    cout << showSolution(InputVariable, solution); // Final Solution
     return 0;
 }
