@@ -6,8 +6,8 @@
 using namespace std;
 
 vector<vector<string>> vecEPI; //전체 EPI
-vector<string> vecEPI1; //EPI의 minterm
-vector<string> vecEPI2; //EPI의 binary
+vector<string> vecEPI1; //vecEPI[0], EPI의 minterm
+vector<string> vecEPI2; //vecEPI[1], EPI의 binary
 vector<vector<string>> vecNEPI; //전체 NEPI
 vector<string> vecNEPI1; //NEPI의 minterm
 vector<string> vecNEPI2; //NEPI의 binary
@@ -15,7 +15,7 @@ vector<string> vecNEPI2; //NEPI의 binary
 string Binary(int a,int b); //minterm, dontcare -> 이진수 변환
 string Count(string n); //변환한 이진수에서의 1의 수 (# of 1s)
 void HammingDistance(int a,int b,string arr[100][4]); //EPI와 NEPI를 찾기 위해 HD=1인 minterm, dontcare 그룹화
-void EPINEPI(int idx, int a, string arr[][4], string EPI[][4]); //찾은 EPI와 NEPI 벡터에 넣기
+void EPINEPI(int idx1, int idx2, string arr1[][4], string arr2[][4]); //찾은 EPI와 NEPI 벡터에 넣기
 void showPI(int a, int b, string arr[][4]); //PI implicant table로 구성
 string Dominance(int a, int arr[]); //column Dominance와 Row Dominance, Petrick's Method 구현
 string showSolution(int a, string str); //Final Solution 표시
@@ -44,7 +44,7 @@ int main(){
     sort(dontcare,dontcare+ndc);
 
     string PIArr[nmin+ndc][4];
-    string numOfOne, binary;
+    string binary;
     
     for (int i=0;i<nmin;i++){
         binary = Binary(InputVariable,minterm[i]);
@@ -131,7 +131,6 @@ void EPINEPI(int idx1, int idx2, string arr1[][4], string arr2[][4]){
 
 //a=nmin+ndc(=arr의 길이), b=inputvariable
 void HammingDistance(int a,int b,string arr[100][4]){
-    string numOfOne;
     vector<int> diff;
     string EPI[100][4];
     int idx=0;
@@ -187,8 +186,8 @@ void HammingDistance(int a,int b,string arr[100][4]){
 //a = arr 길이, arr[] = minterm;
 string Dominance(int a, int arr[]){
     string solution = "";
-    //vecNEPI[0] = [8,10 10,11  11,15  12,13  13,15]
-    //vecNEPI[1] = [10-0  101-   1-11   110-   11-1]
+    //vecNEPI[0] = [8,10   10,11   11,15   12,13   13,15]
+    //vecNEPI[1] = [10-0   101-    1-11    110-    11-1]
     int row = vecNEPI[0].size()+vecEPI[0].size();
     string table[row][a+1];
     for (int i=0;i<row;i++){
@@ -353,7 +352,7 @@ string Dominance(int a, int arr[]){
                 max2_idx = i;
             }
         }
-        if (rowTotal == 0) return solution;
+        if (rowTotal == 0) break;
         for (int i=1;i<a+1;i++){
             if (table[max2_idx][i] == "V"){
                 for (int j=0;j<row;j++){
@@ -363,7 +362,6 @@ string Dominance(int a, int arr[]){
         }
         solution += table[max2_idx][0] + "+";
     }
-
     cout << "   >> Complete Petrick's Method" <<'\n';
     cout << setw(10) << "PI";
     for (int i=0;i<a;i++) cout << setw(4) << arr[i];
@@ -376,7 +374,6 @@ string Dominance(int a, int arr[]){
     }
     for (int i=0;i<a+1;i++) cout << "-----";
     cout << '\n'; 
-
     return solution;
 }
 
